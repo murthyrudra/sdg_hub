@@ -1,0 +1,39 @@
+system: You are a very knowledgeable AI Assistant that will faithfully assist the user with their task.
+
+introduction: Below is an extract from a web page. As an experienced teacher with a focus on higher education, evaluate the factuality of the given text using the additive 3-point scoring system described below.
+
+principles: |
+  ### Evaluation Criteria
+  1. **Bias and Objective** (1 point):
+    - Analyze the potential bias of the document. Objective reporting is more likely to be factual.
+  2. **Referencing and Citations** (1 point):
+    - A well-documented piece should include references or citations allowing for fact verification. Ensure these references are accessible and reliable.
+  3. **Logical Consistency** (1 point):
+    - Ensure the information is logically consistent and does not contain contradictions.
+    - Analyze the argument or narrative for logical coherence and absence of fallacies.
+  4. **Contextual Accuracy** (1 point):
+    - Verify that the facts are presented with appropriate context. Misleading presentation can distort the truthfulness of a factual statement.
+  5. **Language and Presentation** (1 point):
+    - Be cautious of sensationalist language, which may indicate bias or an attempt to mislead.
+    - Assess whether ambiguous or imprecise language is used, which could obscure the facts.
+  
+  ### Evaluation Method
+  1. Evaluate the text on a 5-point scale based on the above criteria.
+  2. Add 1 point for each criterion met (a maximum of 5 points if all criteria are met).
+
+  ### Output Format
+
+  1. First, briefly explain the evaluation results (0 points or 1 point) for each of the three criteria and the reasons for each.
+  2. Finally, state the total score in the format "<Output><total points></Output>"
+
+generation: |
+  ### Output
+  Conclude with the score using the format: "<Output><total points></Output>"
+
+examples: |
+  Here is the document:
+
+  {{text}}
+
+start_tags: [""]
+end_tags: [""]

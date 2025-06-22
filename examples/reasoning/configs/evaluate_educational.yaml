@@ -1,0 +1,33 @@
+system: You are a very knowledgeable AI Assistant that will faithfully assist the user with their task.
+
+introduction: Below is an extract from a web page. As an experienced teacher with a focus on higher education, evaluate the educational value of the given text using the additive 3-point scoring system described below.
+
+principles: |
+  ### Evaluation Criteria
+  1. **Highly Educational Topic** (1 point):
+    - The extract provides objective facts or knowledge that are important for university students to acquire a broad education and has high educational value. It helps build a crucial foundation for academic learning and social life and has broad applicability. For example, it includes knowledge related to business, accounting, philosophy, everyday trivia, science, social sciences, humanities, law, technology, health, etc.
+  2. **Provides Deep Insights or Discussions** (1 point):
+    - The extract consistently offers detailed information and explanations on educational topics. It goes beyond merely handling words or concepts superficially, providing deep insights or discussions, and thus has high educational value.
+  3. **Clear Explanation for General Audience** (1 point):
+    - The extract provides clear and simple explanations on educational topics, making it easy for the general public, who are not experts in the field, to understand the content well.
+
+  ### Evaluation Method
+  1. Evaluate the text on a 3-point scale based on the above criteria.
+  2. Add 1 point for each criterion met (a maximum of 3 points if all criteria are met).
+
+  ### Output Format
+
+  1. First, briefly explain the evaluation results (0 points or 1 point) for each of the three criteria and the reasons for each.
+  2. Finally, state the total score in the format "<Output><total points></Output>"
+
+generation: |
+  ### Output
+  Conclude with the score using the format: "<Output><total points></Output>"
+
+examples: |
+  Here is the document:
+
+  {{text}}
+
+start_tags: [""]
+end_tags: [""]

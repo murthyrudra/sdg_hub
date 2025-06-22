@@ -26,6 +26,17 @@ def meta_llama_chat_template():
 def microsoft_phi_chat_template():
     return """{% for message in messages %}{% if (message['role'] == 'system') %}{{'<|im_start|>system<|im_sep|>' + message['content'] + '<|im_end|>'}}{% elif (message['role'] == 'user') %}{{'<|im_start|>user<|im_sep|>' + message['content'] + '<|im_end|>'}}{% elif (message['role'] == 'assistant') %}{{'<|im_start|>assistant<|im_sep|>' + message['content'] + '<|im_end|>'}}{% endif %}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant<|im_sep|>' }}{% endif %}"""
 
+
+@PromptRegistry.register("microsoft/Phi-4-mini-reasoning")
+def microsoft_phi_4_reasoning_chat_template():
+    return "{{ '<|system|>Your name is Phi, an AI math expert developed by Microsoft.' }}{% for message in messages %}{% if message['role'] == 'system' %} {{ message['content'] }}{% if 'tools' in message and message['tools'] is not none %}{{ '<|tool|>' + message['tools'] + '<|/tool|>' }}{% endif %}{% endif %}{% endfor %}{{ '<|end|>' }}{% for message in messages %}{% if message['role'] != 'system' %}{{ '<|' + message['role'] + '|>' + message['content'] + '<|end|>' }}{% endif %}{% endfor %}{% if add_generation_prompt %}{{ '<|assistant|>' }}{% else %}{{ eos_token }}{% endif %}"
+
+
+@PromptRegistry.register("microsoft/Phi-4-mini-instruct")
+def microsoft_phi_4_mini_instruct_chat_template():
+    return "{% for message in messages %}{% if message['role'] == 'system' and 'tools' in message and message['tools'] is not none %}{{ '<|' + message['role'] + '|>' + message['content'] + '<|tool|>' + message['tools'] + '<|/tool|>' + '<|end|>' }}{% else %}{{ '<|' + message['role'] + '|>' + message['content'] + '<|end|>' }}{% endif %}{% endfor %}{% if add_generation_prompt %}{{ '<|assistant|>' }}{% else %}{{ eos_token }}{% endif %}"
+
+
 @PromptRegistry.register("nvidia/Llama-3_3-Nemotron-Super-49B-v1")
 def nemotron_chat_template():
     return """{{- bos_token }}

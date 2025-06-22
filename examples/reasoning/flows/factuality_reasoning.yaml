@@ -1,0 +1,64 @@
+- block_type: LLMBlock
+  block_config:
+    block_name: factuality_evaluation
+    model_id: "microsoft/Phi-4-mini-instruct"
+    config_path: configs/evaluate_factuality.yaml
+    output_cols:
+      - factuality_explanation
+      - factuality
+    parser_kwargs:
+      parser_name: custom
+      parsing_pattern: ^(.*)<Output>(\d+)</Output>
+      parser_cleanup_tags:
+        - "[END]"
+        - "[End]"
+  gen_kwargs:
+    max_tokens: 2048
+    temperature: 0.7
+
+- block_type: LLMBlock
+  block_config:
+    block_name: complexity_evaluation
+    model_id: "microsoft/Phi-4-mini-instruct"
+    config_path: configs/evaluate_complexity.yaml
+    output_cols:
+      - complexity_explanation
+      - complexity
+    parser_kwargs:
+      parser_name: custom
+      parsing_pattern: ^(.*)<Output>(\d+)</Output>
+      parser_cleanup_tags:
+        - "[END]"
+        - "[End]"
+  gen_kwargs:
+    max_tokens: 2048
+    temperature: 0.7
+
+- block_type: LLMBlock
+  block_config:
+    block_name: educational_evaluation
+    model_id: "microsoft/Phi-4-mini-instruct"
+    config_path: configs/evaluate_educational.yaml
+    output_cols:
+      - educational_value_explanation
+      - educational_value
+    parser_kwargs:
+      parser_name: custom
+      parsing_pattern: ^(.*)<Output>(\d+)</Output>
+      parser_cleanup_tags:
+        - "[END]"
+        - "[End]"
+  gen_kwargs:
+    max_tokens: 2048
+    temperature: 0.7
+
+- block_type: LLMBlock
+  block_config:
+    block_name: domain_categorization
+    model_id: "microsoft/Phi-4-mini-instruct"
+    config_path: configs/domain_categorization.yaml
+    output_cols:
+      - domain
+  gen_kwargs:
+    max_tokens: 2048
+    temperature: 0.7

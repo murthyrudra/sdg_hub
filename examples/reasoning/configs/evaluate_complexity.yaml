@@ -1,0 +1,39 @@
+system: You are a very knowledgeable AI Assistant that will faithfully assist the user with their task.
+
+introduction: Below is an extract from a web page. As an experienced teacher with a focus on higher education, evaluate the complexity of the given text using the additive 3-point scoring system described below.
+
+principles: |
+  ### Evaluation Criteria
+  1. **Linguistic Complexity** (1 point):
+    - The extract should have lexcial diversity i.e. diverse set of words
+    - Presence of technical, jargon, or high-level vocabulary.
+    - The extract should not contain longer and complex sentences.
+
+  2. **Semantic Complexity** (1 point):
+    - There should be logical flow and connections between ideas.
+    - There should be detailed information and explanations on topics/ideas presented.
+
+  3. **Clarity** (1 point):
+    - The main message should be explicit.
+    - The text shouldn't use ambiguous or vague language.
+
+  ### Evaluation Method
+  1. Evaluate the text on a 3-point scale based on the above criteria.
+  2. Add 1 point for each criterion met (a maximum of 3 points if all criteria are met).
+
+  ### Output Format
+
+  1. First, briefly explain the evaluation results (0 points or 1 point) for each of the three criteria and the reasons for each.
+  2. Finally, state the total score in the format "<Output><total points></Output>"
+
+generation: |
+  ### Output
+  Conclude with the score using the format: "<Output><total points></Output>"
+
+examples: |
+  Here is the document:
+
+  {{text}}
+
+start_tags: [""]
+end_tags: [""]

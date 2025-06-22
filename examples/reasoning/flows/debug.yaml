@@ -1,0 +1,17 @@
+- block_type: LLMBlock
+  block_config:
+    block_name: educational_evaluation
+    model_id: "microsoft/Phi-4-mini-instruct"
+    config_path: configs/evaluate_educational.yaml
+    output_cols:
+      - educational_value
+      - educational_value_explanation
+    parser_kwargs:
+      parser_name: custom
+      parsing_pattern: ^(.*)<Output>(\d+)</Output>
+      parser_cleanup_tags:
+        - "[END]"
+        - "[End]"
+  gen_kwargs:
+    max_tokens: 2048
+    temperature: 0.7
