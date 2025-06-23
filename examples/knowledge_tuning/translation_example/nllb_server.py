@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
@@ -27,9 +27,10 @@ async def translate(req: CompletionRequest):
             req.source_lang not in tokenizer.lang_code_to_id
             or req.target_lang not in tokenizer.lang_code_to_id
         ):
-            return {
-                "error": f"Invalid language code. Available codes: {list(tokenizer.lang_code_to_id.keys())}"
-            }, 400
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid language code. Available codes: {list(tokenizer.lang_code_to_id.keys())}",
+            )
         # Set source and target language
         tokenizer.src_lang = req.source_lang
 
@@ -64,39 +65,53 @@ async def translate(req: CompletionRequest):
             ],
         }
     except Exception as e:
-        return {"error": f"Translation failed: {str(e)}"}, 500
+        raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
 
 
 @app.get("/v1/completions")
-async def translate(source_lang: str, target_lang: str, prompt: str):
-    # Set source and target language
-    tokenizer.src_lang = source_lang
+async def translate_get(source_lang: str, target_lang: str, prompt: str):
+    try:
+        # Validate language codes
+        if (
+            source_lang not in tokenizer.lang_code_to_id
+            or target_lang not in tokenizer.lang_code_to_id
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid language code. Available codes: {list(tokenizer.lang_code_to_id.keys())}",
+            )
+        # Set source and target language
+        tokenizer.src_lang = source_lang
 
-    # Tokenize input
-    inputs = tokenizer(prompt, return_tensors="pt")
+        # Tokenize input
+        inputs = tokenizer(prompt, return_tensors="pt")
 
-    # Generate translation
-    with torch.no_grad():
-        output_tokens = model.generate(
-            **inputs,
-            forced_bos_token_id=tokenizer.convert_tokens_to_ids(target_lang),
-            max_length=512,
-        )
+        # Generate translation
+        with torch.no_grad():
+            output_tokens = model.generate(
+                **inputs,
+                forced_bos_token_id=tokenizer.convert_tokens_to_ids(target_lang),
+                max_length=512,
+            )
 
-    # Decode output
-    translated_text = tokenizer.batch_decode(output_tokens, skip_special_tokens=True)[0]
+        # Decode output
+        translated_text = tokenizer.batch_decode(
+            output_tokens, skip_special_tokens=True
+        )[0]
 
-    # Return response in OpenAI-style format
-    return {
-        "id": "nllb-translation",
-        "object": "text_completion",
-        "model": MODEL_NAME,
-        "choices": [
-            {
-                "text": translated_text,
-                "index": 0,
-                "logprobs": None,
-                "finish_reason": "stop",
-            }
-        ],
-    }
+        # Return response in OpenAI-style format
+        return {
+            "id": "nllb-translation",
+            "object": "text_completion",
+            "model": MODEL_NAME,
+            "choices": [
+                {
+                    "text": translated_text,
+                    "index": 0,
+                    "logprobs": None,
+                    "finish_reason": "stop",
+                }
+            ],
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")

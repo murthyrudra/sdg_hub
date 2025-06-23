@@ -30,29 +30,32 @@ ip = IndicProcessor(inference=True)
 
 
 def translate_text(text_batch, model, tokenizer):
-    inputs = tokenizer(
-        text_batch,
-        truncation=True,
-        padding="longest",
-        return_tensors="pt",
-        return_attention_mask=True,
-    )
-
-    with torch.no_grad():
-        output = model.generate(
-            **inputs,
-            use_cache=True,
-            min_length=0,
-            max_length=256,
-            num_beams=5,
-            num_return_sequences=1,
+    try:
+        inputs = tokenizer(
+            text_batch,
+            truncation=True,
+            padding="longest",
+            return_tensors="pt",
+            return_attention_mask=True,
         )
 
-    return tokenizer.batch_decode(
-        output,
-        skip_special_tokens=True,
-        clean_up_tokenization_spaces=True,
-    )
+        with torch.no_grad():
+            output = model.generate(
+                **inputs,
+                use_cache=True,
+                min_length=0,
+                max_length=256,
+                num_beams=5,
+                num_return_sequences=1,
+            )
+
+        return tokenizer.batch_decode(
+            output,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=True,
+        )
+    except Exception as e:
+        raise RuntimeError(f"Translation failed: {str(e)}") from e
 
 
 # Input format mimicking OpenAI completion endpoint
@@ -64,44 +67,50 @@ class CompletionRequest(BaseModel):
 
 
 @app.post("/v1/completions")
-async def translate(req: CompletionRequest):
-    batch = ip.preprocess_batch(
-        [req.prompt],
-        src_lang=req.source_lang,
-        tgt_lang=req.target_lang,
-    )
+async def translate_post(req: CompletionRequest):
+    if not req.prompt or not req.prompt.strip():
+        return {"error": "Empty prompt provided"}
 
-    if req.source_lang == "eng_Latn":
-        generated_tokens = translate_text(batch, en_indic_model, en_indic_tokenizer)
-    else:
-        generated_tokens = translate_text(batch, indic_en_model, indic_en_tokenizer)
+    try:
+        batch = ip.preprocess_batch(
+            [req.prompt],
+            src_lang=req.source_lang,
+            tgt_lang=req.target_lang,
+        )
 
-    translations = ip.postprocess_batch(generated_tokens, lang=req.target_lang)
+        if req.source_lang == "eng_Latn":
+            generated_tokens = translate_text(batch, en_indic_model, en_indic_tokenizer)
+        else:
+            generated_tokens = translate_text(batch, indic_en_model, indic_en_tokenizer)
 
-    # Return response in OpenAI-style format
-    return {
-        "id": "indictrans-translation",
-        "object": "text_completion",
-        "model": (
-            INDIC_EN_MODEL_NAME
-            if req.target_lang == "eng_Latn"
-            else EN_INDIC_MODEL_NAME
-        ),
-        "choices": [
-            {
-                "text": translations[0],
-                "index": 0,
-                "logprobs": None,
-                "finish_reason": "stop",
-            }
-        ],
-    }
+        translations = ip.postprocess_batch(generated_tokens, lang=req.target_lang)
+
+        # Return response in OpenAI-style format
+        return {
+            "id": "indictrans-translation",
+            "object": "text_completion",
+            "model": (
+                INDIC_EN_MODEL_NAME
+                if req.target_lang == "eng_Latn"
+                else EN_INDIC_MODEL_NAME
+            ),
+            "choices": [
+                {
+                    "text": translations[0],
+                    "index": 0,
+                    "logprobs": None,
+                    "finish_reason": "stop",
+                }
+            ],
+        }
+    except Exception as e:
+        return {"error": f"Translation failed: {str(e)}"}
 
 
 @app.get("/v1/completions")
-async def translate(source_lang: str, target_lang: str, prompt: str):
+async def translate_get(source_lang: str, target_lang: str, prompt: str):
     # Create a request object and reuse the POST endpoint logic
     req = CompletionRequest(
         prompt=prompt, source_lang=source_lang, target_lang=target_lang
     )
-    return await translate(req)
+    return await translate_post(req)
