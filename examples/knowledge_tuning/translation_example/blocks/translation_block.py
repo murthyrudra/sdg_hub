@@ -13,12 +13,12 @@ class TranslationBlock(Block):
     def __init__(
         self,
         block_name: str,
-        config_path,
-        client,
-        output_cols,
-        trans_model_id=None,
-        source_lang="eng_Latn",
-        target_lang="hin_Deva",
+        config_path: str,
+        client: object,
+        output_cols: list[str],
+        trans_model_id: str = None,
+        source_lang: str = "eng_Latn",
+        target_lang: str = "hin_Deva",
         **batch_kwargs,
     ) -> None:
         super().__init__(block_name=block_name)
@@ -42,7 +42,19 @@ class TranslationBlock(Block):
         self.server_supports_batched = False
 
     def _translate(self, text: str) -> str:
-        """Translates a single string and returns the translated text."""
+        """
+        Translate a single text string.
+
+        Parameters
+        ----------
+        text : str
+            Text to translate.
+
+        Returns
+        -------
+        str
+            Translated text, or original text if translation fails.
+        """
         logging.debug(f"Translating text using model {self.trans_model_id}")
 
         try:
@@ -59,10 +71,10 @@ class TranslationBlock(Block):
             return response.choices[0].text
         except Exception as e:
             logger.error(f"Translation failed with error: {str(e)}")
-            return None  # Return original text as fallback
+            return text  # Return original text as fallback
 
     def _translate_samples(self, samples) -> list:
-        logger.debug(f"Starting translation...:")
+        logger.debug("Starting translation...")
 
         results = []
         progress_bar = tqdm(range(len(samples)), desc=f"{self.block_name} Translation")
@@ -77,9 +89,6 @@ class TranslationBlock(Block):
 
             for text in columns_to_translate:
                 translated_text = self._translate(text)
-                if translated_text is None:
-                    logger.warning(f"Translation failed for text: {text[:50]}...")
-                    translated_text = text  # Use original text as fallback
                 translated_texts.append(translated_text)
 
             results.append(translated_texts)
@@ -88,11 +97,17 @@ class TranslationBlock(Block):
 
     def generate(self, samples: Dataset) -> Dataset:
         """
-        Generate the output from the block.
-        Args:
-            samples (Dataset): The samples used as input data
-        Returns:
-            The parsed output after generation.
+        Generate translated output from input samples.
+
+        Parameters
+        ----------
+        samples : Dataset
+            Input dataset containing text to translate.
+
+        Returns
+        -------
+        Dataset
+            Dataset with original samples plus translated columns.
         """
 
         # validate each sample

@@ -6,17 +6,8 @@ import click
 # First Party
 from sdg_hub.flow import Flow
 from sdg_hub.logger_config import setup_logger
-from sdg_hub.pipeline import Pipeline
 from sdg_hub.sdg import SDG
-from sdg_hub.prompts import PromptRegistry
-from sdg_hub.blocks import BlockRegistry, Block
 from blocks.translation_block import TranslationBlock
-from transformers import AutoTokenizer
-import re
-import logging
-from typing import List
-from datasets import Dataset
-from tqdm import tqdm
 
 logger = setup_logger(__name__)
 
@@ -68,33 +59,48 @@ logger = setup_logger(__name__)
     "--dataset_end_index", type=int, default=None, help="End index of the dataset."
 )
 def main(
-    ds_path,
-    bs,
-    num_workers,
-    save_path,
-    llm_endpoint,
-    translation_endpoint,
-    flow,
-    checkpoint_dir,
-    save_freq,
-    debug,
-    dataset_start_index,
-    dataset_end_index,
+    ds_path: str,
+    bs: int,
+    num_workers: int,
+    save_path: str,
+    llm_endpoint: str,
+    translation_endpoint: str,
+    flow: str,
+    checkpoint_dir: str,
+    save_freq: int,
+    debug: bool,
+    dataset_start_index: int,
+    dataset_end_index: int,
 ):
     """
-    Main function to process the dataset.
+    Process dataset through translation and generation pipeline.
 
-    Parameters:
-    ds_path (str): Path to the dataset.
-    bs (int): Batch size.
-    num_workers (int): Number of workers.
-    save_path (str): Path to save the output.
-    llm_endpoint (str): LLM Endpoint for data processing.
-    translation_endpoint (str): Translation Endpoint.
-    flow (str): Flow configuration for the process.
-    checkpoint_dir (str): Path to save checkpoints.
-    save_freq (int): Frequency to save checkpoints.
-    debug (bool): Enable debug mode.
+    Parameters
+    ----------
+    ds_path : str
+        Path to the dataset.
+    bs : int
+        Batch size for processing.
+    num_workers : int
+        Number of workers for parallel processing.
+    save_path : str
+        Path to save the output.
+    llm_endpoint : str
+        LLM endpoint for data processing.
+    translation_endpoint : str
+        Translation model endpoint.
+    flow : str
+        Flow configuration file path.
+    checkpoint_dir : str
+        Path to save checkpoints.
+    save_freq : int
+        Frequency to save checkpoints.
+    debug : bool
+        Enable debug mode with reduced dataset.
+    dataset_start_index : int
+        Start index for dataset slicing.
+    dataset_end_index : int
+        End index for dataset slicing.
     """
     logger.info(f"Generation configuration: {locals()}\n\n")
     ds = load_dataset("json", data_files=ds_path, split="train")
