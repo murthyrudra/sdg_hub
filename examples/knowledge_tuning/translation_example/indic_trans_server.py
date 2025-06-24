@@ -1,9 +1,21 @@
+"""
+FastAPI-based translation server for Indic languages.
+
+This module implements a REST API server that provides translation services
+between English and Indic languages using pretrained IndicTrans2 models.
+The server exposes OpenAI-compatible endpoints for translation requests.
+
+Models:
+    - ai4bharat/indictrans2-en-indic-dist-200M: English to Indic translation
+    - ai4bharat/indictrans2-indic-en-dist-200M: Indic to English translation
+"""
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
 from IndicTransToolkit.processor import IndicProcessor
-
+from typing import Dict, Any
 
 app = FastAPI()
 
@@ -29,7 +41,31 @@ indic_en_model.eval()
 ip = IndicProcessor(inference=True)
 
 
-def translate_text(text_batch, model, tokenizer):
+def translate_text(
+    text_batch: list[str], model: AutoModelForSeq2SeqLM, tokenizer: AutoTokenizer
+):
+    """
+    Translate a batch of text using the specified model and tokenizer.
+
+    Parameters
+    ----------
+    text_batch : list[str]
+        List of text strings to translate.
+    model : AutoModelForSeq2SeqLM
+        The translation model to use.
+    tokenizer : AutoTokenizer
+        The tokenizer corresponding to the model.
+
+    Returns
+    -------
+    list[str]
+        List of translated text strings.
+
+    Raises
+    ------
+    RuntimeError
+        If translation fails during processing.
+    """
     try:
         inputs = tokenizer(
             text_batch,
@@ -60,6 +96,21 @@ def translate_text(text_batch, model, tokenizer):
 
 # Input format mimicking OpenAI completion endpoint
 class CompletionRequest(BaseModel):
+    """
+    Request model for translation completion endpoints.
+
+    Attributes
+    ----------
+    prompt : str
+        The text to be translated.
+    source_lang : str, default="kan_Knda"
+        Source language code in BCP-47 format.
+    target_lang : str, default="eng_Latn"
+        Target language code in BCP-47 format.
+    max_length : int, default=512
+        Maximum length of the generated translation.
+    """
+
     prompt: str
     source_lang: str = "kan_Knda"
     target_lang: str = "eng_Latn"
@@ -67,7 +118,20 @@ class CompletionRequest(BaseModel):
 
 
 @app.post("/v1/completions")
-async def translate_post(req: CompletionRequest):
+async def translate_post(req: CompletionRequest) -> Dict[str, Any]:
+    """
+    Translate text via POST request.
+
+    Parameters
+    ----------
+    req : CompletionRequest
+        The request object containing prompt, source_lang, target_lang, and max_length.
+
+    Returns
+    -------
+    Dict[str, Any]
+        Translation response in OpenAI-compatible format or error message.
+    """
     if not req.prompt or not req.prompt.strip():
         return {"error": "Empty prompt provided"}
 
@@ -109,6 +173,23 @@ async def translate_post(req: CompletionRequest):
 
 @app.get("/v1/completions")
 async def translate_get(source_lang: str, target_lang: str, prompt: str):
+    """
+    Translate text via GET request.
+
+    Parameters
+    ----------
+    source_lang : str
+        Source language code in BCP-47 format.
+    target_lang : str
+        Target language code in BCP-47 format.
+    prompt : str
+        The text to be translated.
+
+    Returns
+    -------
+    Dict[str, Any]
+        Translation response in OpenAI-compatible format or error message.
+    """
     # Create a request object and reuse the POST endpoint logic
     req = CompletionRequest(
         prompt=prompt, source_lang=source_lang, target_lang=target_lang

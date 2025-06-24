@@ -67,7 +67,11 @@ class TranslationBlock(Block):
         results = []
         progress_bar = tqdm(range(len(samples)), desc=f"{self.block_name} Translation")
         for sample in samples:
-            columns_to_translate = [sample[key] for key in self.block_config.keys()]
+            columns_to_translate = [
+                sample[key]
+                for key in self.block_config.keys()
+                if key not in ("system", "generation")
+            ]
 
             translated_texts = []
 
@@ -94,10 +98,12 @@ class TranslationBlock(Block):
         # validate each sample
         # Log errors and remove invalid samples
         valid_samples = []
-
         for sample in samples:
             is_valid = True
             for key in self.block_config.keys():
+                # we don't need these keys for translation, atleast for NLLB and IndicTrans
+                if key in ["system", "generation"]:
+                    continue
                 if key not in sample:
                     is_valid = False
 

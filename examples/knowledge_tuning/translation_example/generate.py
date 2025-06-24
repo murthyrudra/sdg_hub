@@ -141,11 +141,16 @@ def main(
     # Track if we found any TranslationBlock instances
     translation_blocks_found = False
 
-    for index in range(len(flow_cfg)):
+    for index in range(len(flow_cfg.chained_blocks)):
         try:
-            if issubclass(flow_cfg[index]["block_type"], TranslationBlock):
-                flow_cfg[index]["block_config"]["client"] = translation_client
+            if issubclass(
+                flow_cfg.chained_blocks[index]["block_type"], TranslationBlock
+            ):
+                flow_cfg.chained_blocks[index]["block_config"][
+                    "client"
+                ] = translation_client
                 translation_blocks_found = True
+                logger.warning(f"Set client to {translation_client}")
         except (KeyError, TypeError) as e:
             logger.error(f"Error processing flow config at index {index}: {e}")
             raise ValueError(f"Invalid flow configuration at index {index}") from e
@@ -154,7 +159,7 @@ def main(
         logger.warning("No TranslationBlock instances found in the flow configuration.")
 
     sdg = SDG(
-        [Pipeline(flow_cfg)],
+        [flow_cfg],
         num_workers=num_workers,
         batch_size=bs,
         save_freq=save_freq,
