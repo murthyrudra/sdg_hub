@@ -3,8 +3,8 @@
     block_name: document_translation
     config_path: configs/translate_documents.yaml
     output_cols:
-    - text_translated
     - title_translated
+    - text_translated
     source_lang: "kan_Knda"  # Source language (Kannada)
     target_lang: "eng_Latn"  # Target language (English)
     trans_model_id: ai4bharat/indictrans2-indic-en-dist-200M

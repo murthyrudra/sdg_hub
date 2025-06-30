@@ -1,8 +1,10 @@
 import os
-from sdg_hub.utils.chunking import chunk_document
-from datasets import Dataset, load_dataset
+import sys
 from tqdm import tqdm
-from glob import glob
+from datasets import Dataset, load_dataset
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "..")))
+from knowledge_utils import chunk_document
 
 # output directory
 output_dir = f"sdg_demo_output/"
