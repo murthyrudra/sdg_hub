@@ -82,9 +82,9 @@ def mistral_small_3_chat_template():
   
 @PromptRegistry.register("ibm-granite/granite-3.3")
 def granite_3_3_chat_template():
-  """
-  Granite 3.3 2B and 8B Chat Template
-  """
+    """
+    Granite 3.3 2B and 8B Chat Template
+    """
     return """
 {# Alias tools -> available_tools #}
 {%- if tools and not available_tools -%}
@@ -139,4 +139,3 @@ def granite_3_3_chat_template():
      {%- endif %}
  {%- endfor %}
 """
-  
