@@ -34,6 +34,7 @@ dependencies = [
     "datasets>=2.18.0,<4.0.0",
     "httpx>=0.25.0,<1.0.0",
     "jinja2",
+    "litellm>=1.61.15",
     "openai>=1.13.3,<2.0.0",
     "rich",
     "tenacity>=8.3.0,!=8.4.0",
@@ -55,7 +56,7 @@ web_interface = [
     "flask-wtf>=1.2.2",
 ]
 vllm = [
-    "vllm>=0.8.0,<0.8.4",
+    "vllm>=0.9.1",
     "torch>=2.0.0",
     "transformers>=4.37.0",
     "accelerate>=0.21.0",
