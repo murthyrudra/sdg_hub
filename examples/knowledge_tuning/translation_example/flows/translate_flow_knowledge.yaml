@@ -1,7 +1,7 @@
 - block_type: TranslationBlock
   block_config:
     block_name: document_translation
-    config_path: configs/translate_documents.yaml
+    config_path: prompts/translate_documents.yaml
     output_cols:
     - title_translated
     - text_translated
@@ -14,7 +14,7 @@
   block_config:
     block_name: question_generation
     model_id: "ibm-granite/granite-3.3-2b-instruct"
-    config_path: configs/generate_question.yaml
+    config_path: prompts/generate_question.yaml
     output_cols:
       - question
     parser_kwargs:
@@ -31,7 +31,7 @@
   block_config:
     block_name: response_generation
     model_id: "ibm-granite/granite-3.3-2b-instruct"
-    config_path: configs/generate_response.yaml
+    config_path: prompts/generate_response.yaml
     output_cols:
       - response
     parser_kwargs:
@@ -47,7 +47,7 @@
 - block_type: TranslationBlock
   block_config:
     block_name: question_response_translation
-    config_path: configs/translate_question_response.yaml
+    config_path: prompts/translate_question_response.yaml
     output_cols:
     - question_translated
     - response_translated
