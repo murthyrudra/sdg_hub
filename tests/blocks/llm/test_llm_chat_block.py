@@ -6,17 +6,17 @@ from unittest.mock import MagicMock, patch
 
 # Third Party
 from datasets import Dataset
-import pytest
 
 # First Party
-from sdg_hub.blocks.llm import LLMChatBlock, LLMConfig
-from sdg_hub.utils.error_handling import BlockValidationError
+from sdg_hub.core.blocks.llm import LLMChatBlock, LLMConfig
+from sdg_hub.core.utils.error_handling import BlockValidationError
+import pytest
 
 
 @pytest.fixture
 def mock_litellm_completion():
     """Mock LiteLLM completion function."""
-    with patch("sdg_hub.blocks.llm.client_manager.completion") as mock_completion:
+    with patch("sdg_hub.core.blocks.llm.client_manager.completion") as mock_completion:
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
         mock_response.choices[0].message.content = "Test response"
@@ -25,9 +25,25 @@ def mock_litellm_completion():
 
 
 @pytest.fixture
+def mock_litellm_completion_multiple():
+    """Mock LiteLLM completion function for multiple responses (n > 1)."""
+    with patch("sdg_hub.core.blocks.llm.client_manager.completion") as mock_completion:
+        mock_response = MagicMock()
+        # Mock 3 choices for n=3
+        mock_response.choices = [MagicMock(), MagicMock(), MagicMock()]
+        mock_response.choices[0].message.content = "Response 1"
+        mock_response.choices[1].message.content = "Response 2"
+        mock_response.choices[2].message.content = "Response 3"
+        mock_completion.return_value = mock_response
+        yield mock_completion
+
+
+@pytest.fixture
 def mock_litellm_acompletion():
     """Mock LiteLLM async completion function."""
-    with patch("sdg_hub.blocks.llm.client_manager.acompletion") as mock_acompletion:
+    with patch(
+        "sdg_hub.core.blocks.llm.client_manager.acompletion"
+    ) as mock_acompletion:
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
         mock_response.choices[0].message.content = "Test async response"
@@ -369,29 +385,32 @@ class TestLLMChatBlock:
         )
 
         # Valid dataset
-        valid_dataset = Dataset.from_dict({
-            "messages": [
-                [{"role": "user", "content": "Hello!"}],
-                [{"role": "system", "content": "You are helpful"}, {"role": "user", "content": "What is 2+2?"}]
-            ]
-        })
-        
+        valid_dataset = Dataset.from_dict(
+            {
+                "messages": [
+                    [{"role": "user", "content": "Hello!"}],
+                    [
+                        {"role": "system", "content": "You are helpful"},
+                        {"role": "user", "content": "What is 2+2?"},
+                    ],
+                ]
+            }
+        )
+
         # Should not raise any exception
         block._validate_custom(valid_dataset)
 
         # Invalid dataset - messages not a list
-        invalid_dataset = Dataset.from_dict({
-            "messages": ["not a list", "also not a list"]
-        })
-        
+        invalid_dataset = Dataset.from_dict(
+            {"messages": ["not a list", "also not a list"]}
+        )
+
         with pytest.raises(BlockValidationError, match="must contain a list"):
             block._validate_custom(invalid_dataset)
 
         # Invalid dataset - empty messages
-        empty_dataset = Dataset.from_dict({
-            "messages": [[], []]
-        })
-        
+        empty_dataset = Dataset.from_dict({"messages": [[], []]})
+
         with pytest.raises(BlockValidationError, match="Messages list is empty"):
             block._validate_custom(empty_dataset)
 
@@ -437,9 +456,11 @@ class TestErrorHandling:
 
     def test_litellm_rate_limit_error(self, sample_dataset):
         """Test handling of LiteLLM rate limit errors."""
-        with patch("sdg_hub.blocks.llm.client_manager.completion") as mock_completion:
+        with patch(
+            "sdg_hub.core.blocks.llm.client_manager.completion"
+        ) as mock_completion:
             # First Party
-            from sdg_hub.blocks.llm.error_handler import RateLimitError
+            from sdg_hub.core.blocks.llm.error_handler import RateLimitError
 
             # Mock successful response for retry
             mock_response = MagicMock()
@@ -471,9 +492,11 @@ class TestErrorHandling:
 
     def test_litellm_authentication_error(self, sample_dataset):
         """Test handling of authentication errors (non-retryable)."""
-        with patch("sdg_hub.blocks.llm.client_manager.completion") as mock_completion:
+        with patch(
+            "sdg_hub.core.blocks.llm.client_manager.completion"
+        ) as mock_completion:
             # First Party
-            from sdg_hub.blocks.llm.error_handler import AuthenticationError
+            from sdg_hub.core.blocks.llm.error_handler import AuthenticationError
 
             mock_completion.side_effect = AuthenticationError(
                 "Invalid API key", llm_provider="openai", model="gpt-4"
@@ -496,9 +519,11 @@ class TestErrorHandling:
 
     def test_litellm_context_window_error(self, sample_dataset):
         """Test handling of context window exceeded errors."""
-        with patch("sdg_hub.blocks.llm.client_manager.completion") as mock_completion:
+        with patch(
+            "sdg_hub.core.blocks.llm.client_manager.completion"
+        ) as mock_completion:
             # First Party
-            from sdg_hub.blocks.llm.error_handler import ContextWindowExceededError
+            from sdg_hub.core.blocks.llm.error_handler import ContextWindowExceededError
 
             mock_completion.side_effect = ContextWindowExceededError(
                 "Context window exceeded", llm_provider="openai", model="gpt-4"
@@ -526,7 +551,7 @@ class TestRegistration:
     def test_llm_chat_block_registered(self):
         """Test that LLMChatBlock is properly registered."""
         # First Party
-        from sdg_hub.blocks.registry import BlockRegistry
+        from sdg_hub import BlockRegistry
 
         assert "LLMChatBlock" in BlockRegistry._metadata
         assert BlockRegistry._metadata["LLMChatBlock"].block_class == LLMChatBlock
@@ -565,6 +590,112 @@ class TestLLMChatBlockValidation:
 
         # Should not raise any exception
         block._validate_custom(dataset)
+
+
+class TestMultipleResponses:
+    """Test multiple response generation (n > 1)."""
+
+    def test_multiple_responses_sync(
+        self, mock_litellm_completion_multiple, sample_dataset
+    ):
+        """Test synchronous generation with n > 1."""
+        block = LLMChatBlock(
+            block_name="test_multiple_sync",
+            input_cols="messages",
+            output_cols="responses",
+            model="openai/gpt-4",
+            api_key="test-key",
+            n=3,  # Generate 3 responses per input
+        )
+
+        result = block.generate(sample_dataset)
+
+        assert "responses" in result.column_names
+        assert len(result["responses"]) == 2  # Two input samples
+
+        # Each response should be a list of 3 strings
+        for responses in result["responses"]:
+            assert isinstance(responses, list)
+            assert len(responses) == 3
+            assert responses == ["Response 1", "Response 2", "Response 3"]
+
+        assert mock_litellm_completion_multiple.call_count == 2  # One call per sample
+
+    def test_single_response_still_works(self, mock_litellm_completion, sample_dataset):
+        """Test that n=1 or n=None still returns single strings."""
+        # Test n=1
+        block_n1 = LLMChatBlock(
+            block_name="test_single_n1",
+            input_cols="messages",
+            output_cols="response",
+            model="openai/gpt-4",
+            api_key="test-key",
+            n=1,
+        )
+
+        result_n1 = block_n1.generate(sample_dataset)
+        assert "response" in result_n1.column_names
+        assert len(result_n1["response"]) == 2
+        # Each response should be a single string, not a list
+        for response in result_n1["response"]:
+            assert isinstance(response, str)
+            assert response == "Test response"
+
+        # Test n=None (default)
+        block_none = LLMChatBlock(
+            block_name="test_single_none",
+            input_cols="messages",
+            output_cols="response",
+            model="openai/gpt-4",
+            api_key="test-key",
+        )
+
+        result_none = block_none.generate(sample_dataset)
+        assert "response" in result_none.column_names
+        assert len(result_none["response"]) == 2
+        # Each response should be a single string, not a list
+        for response in result_none["response"]:
+            assert isinstance(response, str)
+            assert response == "Test response"
+
+    def test_multiple_responses_with_override(
+        self, mock_litellm_completion_multiple, sample_dataset
+    ):
+        """Test multiple responses with runtime n override."""
+        block = LLMChatBlock(
+            block_name="test_override_n",
+            input_cols="messages",
+            output_cols="responses",
+            model="openai/gpt-4",
+            api_key="test-key",
+            n=1,  # Initially set to 1
+        )
+
+        # Override n to 3 at runtime
+        result = block.generate(sample_dataset, n=3)
+
+        assert "responses" in result.column_names
+        assert len(result["responses"]) == 2
+
+        # Each response should be a list of 3 strings due to override
+        for responses in result["responses"]:
+            assert isinstance(responses, list)
+            assert len(responses) == 3
+            assert responses == ["Response 1", "Response 2", "Response 3"]
+
+    def test_config_validation_with_n_parameter(self):
+        """Test that n parameter is properly validated in config."""
+        # Valid n parameter
+        config = LLMConfig(model="openai/gpt-4", n=5)
+        assert config.n == 5
+
+        # Invalid n parameter (negative)
+        with pytest.raises(ValueError, match="n must be positive"):
+            LLMConfig(model="openai/gpt-4", n=-1)
+
+        # Invalid n parameter (zero)
+        with pytest.raises(ValueError, match="n must be positive"):
+            LLMConfig(model="openai/gpt-4", n=0)
 
     def test_validation_fails_with_non_list_messages(self):
         """Test validation fails when messages is not a list."""
@@ -606,12 +737,14 @@ class TestLLMChatBlockValidation:
     def test_validation_fails_with_non_dict_message(self):
         """Test validation fails when message is not a dict."""
         # Create dataset with valid structure first, then modify it to test the error
-        dataset = Dataset.from_dict({
-            "messages": [
-                [{"role": "user", "content": "Valid message"}],
-                [{"role": "user", "content": "Valid message"}]
-            ]
-        })
+        Dataset.from_dict(
+            {
+                "messages": [
+                    [{"role": "user", "content": "Valid message"}],
+                    [{"role": "user", "content": "Valid message"}],
+                ]
+            }
+        )
 
         block = LLMChatBlock(
             block_name="test_validation",
@@ -666,8 +799,10 @@ class TestLLMChatBlockValidation:
             return True
 
         # Create a sample with invalid message and test the validation
-        invalid_sample = {"messages": [{"role": "user", "content": "Valid message"}, "not a dict"]}
-        
+        invalid_sample = {
+            "messages": [{"role": "user", "content": "Valid message"}, "not a dict"]
+        }
+
         with pytest.raises(BlockValidationError, match="must be a dict"):
             validate_sample_with_invalid_message((0, invalid_sample))
 
@@ -704,14 +839,18 @@ class TestLLMChatBlockValidation:
             model="openai/gpt-3.5-turbo",
         )
 
-        with pytest.raises(BlockValidationError, match="missing required 'content' field"):
+        with pytest.raises(
+            BlockValidationError, match="missing required 'content' field"
+        ):
             block._validate_custom(dataset)
 
     def test_validation_fails_with_null_role(self):
         """Test validation fails when role is explicitly None."""
         invalid_data = [
             {"messages": [{"role": "user", "content": "Valid message"}]},
-            {"messages": [{"role": None, "content": "Null role"}]},  # Invalid - None role
+            {
+                "messages": [{"role": None, "content": "Null role"}]
+            },  # Invalid - None role
         ]
         dataset = Dataset.from_list(invalid_data)
 
@@ -740,7 +879,9 @@ class TestLLMChatBlockValidation:
             model="openai/gpt-3.5-turbo",
         )
 
-        with pytest.raises(BlockValidationError, match="missing required 'content' field"):
+        with pytest.raises(
+            BlockValidationError, match="missing required 'content' field"
+        ):
             block._validate_custom(dataset)
 
     def test_validation_error_reports_correct_row_and_message(self):
@@ -782,10 +923,10 @@ class TestLLMChatBlockValidation:
             large_data.append(
                 {"messages": [{"role": "user", "content": f"Message {i}"}]}
             )
-        
+
         # Add invalid sample at the end
         large_data.append({"messages": [{"role": "user"}]})  # Missing content
-        
+
         dataset = Dataset.from_list(large_data)
 
         block = LLMChatBlock(
@@ -809,15 +950,24 @@ class TestLLMChatBlockValidation:
                 "messages": [
                     {"role": "system", "content": "You are a helpful assistant."},
                     {"role": "user", "content": "Hello, how are you?"},
-                    {"role": "assistant", "content": "I'm doing well, thank you! How can I help you today?"},
+                    {
+                        "role": "assistant",
+                        "content": "I'm doing well, thank you! How can I help you today?",
+                    },
                     {"role": "user", "content": "Can you help me with Python?"},
-                    {"role": "assistant", "content": "Absolutely! I'd be happy to help with Python. What specific question do you have?"},
+                    {
+                        "role": "assistant",
+                        "content": "Absolutely! I'd be happy to help with Python. What specific question do you have?",
+                    },
                 ]
             },
             {
                 "messages": [
                     {"role": "user", "content": "What's the weather like?"},
-                    {"role": "assistant", "content": "I don't have access to real-time weather data."},
+                    {
+                        "role": "assistant",
+                        "content": "I don't have access to real-time weather data.",
+                    },
                     {"role": "user", "content": "That's okay, thanks!"},
                 ]
             },
