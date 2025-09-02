@@ -1,0 +1,182 @@
+metadata:
+  name: Synthetic Query Generation Pipeline
+  description: Processes documents to generate synthetic queries for Retrieval
+  version: 1.0.0
+  author: Rudra Murthy
+  recommended_models:
+    default: openai/gpt-oss-20b
+    compatible:
+    - openai/gpt-oss-20b
+  tags:
+  - question-generation
+  dataset_requirements:
+    required_columns:
+    - document
+    description: Input documents for processing
+  id: exact-colt-111
+
+blocks:
+- block_type: DuplicateColumnsBlock
+  block_config:
+    block_name: backup_document
+    input_cols:
+      document: original_document
+
+# Build Scenario Prompt
+- block_type: PromptBuilderBlock
+  block_config:
+    block_name: build_scenario_prompt
+    input_cols:
+    - document
+    output_cols:
+    - scenario_prompt
+    prompt_config_path: prompts/prompt_scenario.yaml
+    format_as_messages: true
+# Generate Scenario
+- block_type: LLMChatBlock
+  block_config:
+    block_name: generate_scenario
+    input_cols:
+    - scenario_prompt
+    output_cols:
+    - scenario
+    max_tokens: 4000
+    temperature: 0.8
+    top_p: 1.0
+    async_mode: false
+# Filter Invalid Scenarios
+- block_type: ColumnValueFilterBlock
+  block_config:
+    block_name: invalid_scenario
+    input_cols: scenario
+    operation: ne
+    filter_value: "NOT APPLICABLE"
+
+# Build Answer Prompt
+- block_type: PromptBuilderBlock
+  block_config:
+    block_name: build_explanation_prompt
+    input_cols:
+    - document
+    - scenario
+    output_cols:
+    - explanation_prompt
+    prompt_config_path: prompts/prompt_answer.yaml
+    format_as_messages: true
+# Generate Answer
+- block_type: "LLMChatBlock"
+  block_config:
+    block_name: "generate_explanation"
+    input_cols: 
+    - explanation_prompt
+    output_cols:
+    - explanation
+    max_tokens: 4000
+    temperature: 0.8
+    async_mode: false
+
+## Scenario Relevant
+# Build Answer Prompt
+- block_type: PromptBuilderBlock
+  block_config:
+    block_name: build_scenario_relevant_prompt
+    input_cols:
+    - document
+    - scenario
+    output_cols:
+    - scenario_relevant_prompt
+    prompt_config_path: prompts/prompt_scenario_relevant.yaml
+    format_as_messages: true
+# Generate if Scenario IS Relevant
+- block_type: "LLMChatBlock"
+  block_config:
+    block_name: "generate_scenario_relevant"
+    input_cols: 
+    - scenario_relevant_prompt
+    output_cols:
+    - raw_scenario_relevant
+    max_tokens: 4000
+    temperature: 0.8
+    async_mode: false
+# Text Parser Block
+- block_type: "TextParserBlock"
+  block_config:
+    block_name: "extract_scenario_relevant"
+    input_cols: raw_scenario_relevant
+    output_cols:
+    - scenario_relevant_explanation
+    - scenario_relevant_score
+    start_tags: ["[Start of Explanation]", "[Start of Answer]"]
+    end_tags: ["[End of Explanation]", "[End of Answer]"]
+# Filter Irrelevant Scenarios
+- block_type: ColumnValueFilterBlock
+  block_config:
+    block_name: drop_scenario_irrelevant
+    input_cols: scenario_relevant_score
+    operation: eq
+    filter_value: "YES"
+
+
+## Explanation Satisfactory
+# Build explanation satisfactory Prompt
+- block_type: PromptBuilderBlock
+  block_config:
+    block_name: build_explanation_satisfactory_prompt
+    input_cols:
+    - document
+    - scenario
+    - explanation
+    output_cols:
+    - explanation_satisfactory_prompt
+    prompt_config_path: prompts/prompt_explanation_satisfactory.yaml
+    format_as_messages: true
+# Generate if Explnation IS Satisfactory
+- block_type: "LLMChatBlock"
+  block_config:
+    block_name: "generate_explanation_satisfactory"
+    input_cols: 
+    - explanation_satisfactory_prompt
+    output_cols:
+    - raw_explanation_satisfactory
+    max_tokens: 4000
+    temperature: 0.8
+    async_mode: false
+# Text Parser Block
+- block_type: "TextParserBlock"
+  block_config:
+    block_name: "extract_explanation_satisfactory"
+    input_cols: raw_explanation_satisfactory
+    output_cols:
+    - explanation_satisfactory_feedback
+    - explanation_satisfactory_score
+    start_tags: ["[Start of Feedback]", "[Start of Score]"]
+    end_tags: ["[End of Feedback]", "[End of Score]"]
+# Filter Irrelevant Scenarios
+- block_type: ColumnValueFilterBlock
+  block_config:
+    block_name: drop_explanation_unsatisfactory
+    input_cols: explanation_satisfactory_score
+    operation: eq
+    filter_value: 2
+
+# # Build Translation Prompt
+# - block_type: PromptBuilderBlock
+#   block_config:
+#     block_name: build_translation_prompt
+#     input_cols:
+#     - scenario
+#     output_cols:
+#     - translate_prompt
+#     prompt_config_path: prompts/prompt_translate.yaml
+#     format_as_messages: true
+# # Translate Answer
+# - block_type: "LLMChatBlock"
+#   block_config:
+#     block_name: "translate_scenario"
+#     input_cols: 
+#       - translate_prompt
+#     output_cols:
+#       - translated_scenario
+#     max_tokens: 4000
+#     temperature: 0.8
+#     async_mode: false

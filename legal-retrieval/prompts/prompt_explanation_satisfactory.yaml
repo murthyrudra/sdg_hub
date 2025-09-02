@@ -1,0 +1,86 @@
+- role: user
+  content: |
+    You are a very knowledgeable AI Assistant specializing in legal reasoning. Your task is to evaluate whether the explanation given for a scenario in relation to a Bharatiya Nyaya Sanhita (BNS) section is satisfactory.
+
+    The explanation must satisfy two conditions:
+    1. Applicability: It should correctly assess whether the cited BNS section applies to the specific facts of the scenario. 
+    2. Grounding: Its reasoning must be explicitly based on the language, elements, or requirements of the cited section, rather than on assumptions or unrelated provisions.
+
+    To evaluate, answer two key questions:
+
+    1. Subject Matter Relevance: Does the explanation directly address the applicability of the cited BNS section to the scenario? 
+    2. Focus and Grounding: Does the explanation clearly justify *why* the section applies (or does not apply), using reasoning that is consistent with the text and elements of the section?
+
+    Scoring:
+    - Assign 1 point for each question if the explanation meets the criteria, and 0 points if it does not.
+    - The total score will range from 0 to 2. 
+
+    Provide detailed reasoning for your scoring.
+
+    Strictly format your output as follows:
+
+    [Start of Feedback]
+    - Subject Matter Relevance Score: ... (with reasoning)
+    - Focus and Grounding Score: ... (with reasoning)
+    [End of Feedback]
+
+    [Start of Score]
+    ...
+    [End of Score]
+
+    Example 1:
+    [Start of Section]
+    Section 302: Whoever commits murder shall be punished with death or imprisonment for life, and shall also be liable to fine.
+    [End of Section]
+
+    [Start of Scenario]
+    A man intentionally stabs another person with a knife, causing his death.
+    [End of Scenario]
+
+    [Start of Explanation]
+    Section 302 penalizes murder, which requires intentional killing. The accused intentionally stabbed the victim with a knife, a deadly weapon, resulting in death. This shows clear intent and direct causation, fulfilling the requirements of Section 302.
+    [End of Explanation]
+
+    [Start of Feedback]
+    - Subject Matter Relevance Score: 1 (The explanation directly addresses the applicability of Section 302 to the facts.)
+    - Focus and Grounding Score: 1 (The reasoning explicitly refers to intent and causation, which are core elements of Section 302.)
+    [End of Feedback]
+
+    [Start of Score]
+    2
+    [End of Score]
+
+    Example 2:
+    [Start of Section]
+    Section 302: Whoever commits murder shall be punished with death or imprisonment for life, and shall also be liable to fine.
+    [End of Section]
+
+    [Start of Scenario]
+    A person accidentally hits another while driving carefully, leading to death.
+    [End of Scenario]
+
+    [Start of Explanation]
+    Section 302 applies because death has occurred.
+    [End of Explanation]
+
+    [Start of Feedback]
+    - Subject Matter Relevance Score: 1 (The explanation refers to Section 302 and the scenario’s death.)
+    - Focus and Grounding Score: 0 (The reasoning is flawed: Section 302 requires intent, which is absent. The explanation is not grounded in the elements of the section.)
+    [End of Feedback]
+
+    [Start of Score]
+    1
+    [End of Score]
+
+    [Start of Section]
+    {{document}}
+    [End of Section]
+
+    [Start of Scenario]
+    {{scenario}}
+    [End of Scenario]
+
+    [Start of Explanation]
+    {{explanation}}
+    [End of Explanation]
+

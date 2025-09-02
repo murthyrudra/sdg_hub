@@ -1,0 +1,62 @@
+- role: user
+  content: |
+    Determine if the given Bharatiya Nyaya Sanhita (BNS) section is applicable to the provided scenario. Respond with YES if the scenario falls under the scope of the section, even partially. Respond with NO if the scenario does not fall under the scope of the section.  
+
+    Guidelines:
+    - Answer YES if the facts of the scenario align with the legal provisions, elements, or intent of the cited BNS section. 
+    - Answer NO if the scenario does not match the conditions, elements, or scope of the section, or if it clearly contradicts the law.  
+    - Avoid using "partially" in the response. If there is any reasonable legal basis that the section could apply, answer YES.  
+
+
+    Strictly answer in this format:
+    [Start of Context]
+    ...
+    [End of Context]
+    [Start of Scenario]
+    ... 
+    [End of Scenario]
+    [Start of Explanation]
+    ...
+    [End of Explanation]
+    [Start of Answer]
+    ...
+    [End of Answer]
+
+    Example 1:
+    [Start of Context]
+    Section 302: Whoever commits murder shall be punished with death or imprisonment for life, and shall also be liable to fine.
+    [End of Context]
+    [Start of Scenario]
+    A man intentionally stabs another person with a knife, causing his death.
+    [End of Scenario]
+    [Start of Explanation]
+    The scenario describes intentional killing, which is covered under the definition of murder. Therefore, Section 302 applies.
+    [End of Explanation]
+    [Start of Answer]
+    YES
+    [End of Answer]
+
+    Example 2:
+    [Start of Context]
+    Section 302: Whoever commits murder shall be punished with death or imprisonment for life, and shall also be liable to fine.
+    [End of Context]
+    [Start of Scenario]
+    A person accidentally hits another while driving carefully, leading to death.
+    [End of Scenario]
+    [Start of Explanation]
+    The death in this scenario is accidental and lacks intent, which is required for murder under Section 302.
+    [End of Explanation]
+    [Start of Answer]
+    NO
+    [End of Answer]
+
+    Now, based on the above examples and guidelines, determine if the section is applicable to the scenario.
+    * Return the explanation within the [Start of Explanation] and [End of Explanation] tags.
+    * Return the answer between [Start of Answer] and [End of Answer] tags.
+
+    [Start of Context]
+    {{document}}
+    [End of Context]
+    [Start of Scenario]
+    {{scenario}}
+    [End of Scenario]

@@ -1,0 +1,2 @@
+- role: user
+  content: "You are given a scenario in English.\n\nScenario: {{scenario}}\n\nYour task is to translate the scenario in Kannada language. Generate only the translation. Do not generate any extra words."
