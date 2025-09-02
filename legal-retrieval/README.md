@@ -45,37 +45,18 @@ This will:
 ```mermaid
 sequenceDiagram
     participant Input as Input Dataset
-    participant Dup as DuplicateColumnsBlock<br/>(backup_document)
-    participant PB1 as PromptBuilderBlock<br/>(build_scenario_prompt)
-    participant LLM1 as LLMChatBlock<br/>(generate_scenario)
-    participant F1 as ColumnValueFilterBlock<br/>(invalid_scenario)
-    participant PB2 as PromptBuilderBlock<br/>(build_explanation_prompt)
-    participant LLM2 as LLMChatBlock<br/>(generate_explanation)
-    participant PB3 as PromptBuilderBlock<br/>(build_scenario_relevant_prompt)
-    participant LLM3 as LLMChatBlock<br/>(generate_scenario_relevant)
-    participant TP1 as TextParserBlock<br/>(extract_scenario_relevant)
-    participant F2 as ColumnValueFilterBlock<br/>(drop_scenario_irrelevant)
-    participant PB4 as PromptBuilderBlock<br/>(build_explanation_satisfactory_prompt)
-    participant LLM4 as LLMChatBlock<br/>(generate_explanation_satisfactory)
-    participant TP2 as TextParserBlock<br/>(extract_explanation_satisfactory)
-    participant F3 as ColumnValueFilterBlock<br/>(drop_explanation_unsatisfactory)
-    participant Output as Output Dataset
+    participant Scenario as Scenario Generation
+    participant Explanation as Explanation Generation
+    participant Relevance as Scenario Relevance Check
+    participant Satisfaction as Explanation Satisfaction Check
+    participant Output as Final Output
 
-    Input ->> Dup: document → original_document
-    Dup ->> PB1: document
-    PB1 ->> LLM1: scenario_prompt
-    LLM1 ->> F1: scenario
-    F1 ->> PB2: scenario
-    PB2 ->> LLM2: explanation_prompt
-    LLM2 ->> PB3: explanation
-    PB3 ->> LLM3: scenario_relevant_prompt
-    LLM3 ->> TP1: raw_scenario_relevant
-    TP1 ->> F2: scenario_relevant_score
-    F2 ->> PB4: scenario
-    PB4 ->> LLM4: explanation_satisfactory_prompt
-    LLM4 ->> TP2: raw_explanation_satisfactory
-    TP2 ->> F3: explanation_satisfactory_score
-    F3 ->> Output: Valid Scenarios + Explanations
+    Input ->> Scenario: document → generate_scenario
+    Scenario ->> Explanation: build_explanation_prompt → generate_explanation
+    Scenario ->> Relevance: build_scenario_relevant_prompt → generate_scenario_relevancy
+    Explanation ->> Satisfaction: build_explanation_satisfactory_prompt → generate_explanation_satisfactory
+    Relevance ->> Output: valid scenarios
+    Satisfaction ->> Output: satisfactory explanations
 ```
 
 ## 🤝 Contributing
